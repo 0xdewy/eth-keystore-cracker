@@ -15,3 +15,13 @@ structopt = { version = "0.3", features = [ "paw" ] }
 paw = "1.0"
 eth-keystore = "*"
 num_cpus = "*"
+serde_json = "1.0"
+keepass = "*"
+thiserror = "*"
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "decrypt_keystore_bench"
+harness = false

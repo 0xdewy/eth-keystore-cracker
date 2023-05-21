@@ -1,15 +1,23 @@
 # Ethereum Keystore Cracker
-Decrypt Ethereum keystores.
 
-To generate password file check out: [cracken](https://github.com/shmuelamar/cracken)
+Multithreaded Ethereum keystore search and decrypt
+
+To generate password file check out: 
+
+[cracken](https://github.com/shmuelamar/cracken)
+
+or
+
+[pwfuzz-rs](https://github.com/mttaggart/pwfuzz-rs)
 
 ## Usage
 ```
- USAGE:
-    keystore_cracker [FLAGS] [OPTIONS] <keystore-directory> <output-directory> <passwords-file>
+Ethereum Keystore Cracker
+
+USAGE:
+    keystore_cracker [OPTIONS] <keystore-directory> <output-directory> <passwords-file>
 
 FLAGS:
-    -d, --debug      Activate debug mode
     -h, --help       Prints help information
     -V, --version    Prints version information
 
@@ -20,10 +28,5 @@ ARGS:
     <keystore-directory>    Directory of keystore(s) to decrypt
     <output-directory>      Where new keystores will be saved
     <passwords-file>        Text file with password on each newline
-      
+
 ```
-
-## Features
-[x] Decrypt keystore(s) from a list of potential passwords
-
-[ ] [keepass](https://github.com/sseemayer/keepass-rs) integration 

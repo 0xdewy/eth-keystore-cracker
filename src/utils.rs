@@ -1,26 +1,9 @@
-use anyhow::{Error, Result};
-use ethers::providers::{Http, Provider};
+use serde_json;
 use std::{
-    convert::TryFrom,
-    env,
     fs::File,
     io::{self, BufRead},
     path::PathBuf,
 };
-
-#[allow(non_snake_case)]
-pub fn ARCHIVE_NODE() -> String {
-    env::var("ARCHIVE_NODE").unwrap()
-}
-
-pub fn get_provider() -> Result<Provider<Http>> {
-    match Provider::<Http>::try_from(ARCHIVE_NODE().as_str()) {
-        Ok(p) => Ok(p),
-        Err(_e) => Err(Error::msg(
-            "Failed to connect to infura http provider".to_string(),
-        )),
-    }
-}
 
 pub fn read_lines(path: &PathBuf) -> Vec<String> {
     let mut content: Vec<String> = Vec::new();
@@ -34,28 +17,42 @@ pub fn read_lines(path: &PathBuf) -> Vec<String> {
     content
 }
 
-/// Returns all files in provided directory
-///
-/// If a single file is provided it returns a vector including that file
-pub fn files_in_directory(path: &PathBuf) -> Result<Vec<PathBuf>> {
-    let files_src = {
-        if path.is_dir() {
-            let mut entries = std::fs::read_dir(path)?
-                .map(|res| res.map(|e| e.path()))
-                .collect::<Result<Vec<_>, std::io::Error>>()?;
-            entries.sort();
-            let mut temp_src: Vec<PathBuf> = Vec::new();
-            for el in entries.iter() {
-                let entry: &str = match el.to_str() {
-                    Some(e) => e,
-                    None => break,
-                };
-                temp_src.push(PathBuf::from(entry));
-            }
-            temp_src
-        } else {
-            return Err(Error::msg("Expecting directory".to_string()));
+pub fn find_keystore_files(directory: &PathBuf) -> io::Result<Vec<PathBuf>> {
+    let mut keystore_files = Vec::new();
+
+    for entry in std::fs::read_dir(directory)? {
+        let path = entry?.path();
+
+        if !path.is_file() {
+            keystore_files.extend(find_keystore_files(&path)?);
+            continue;
         }
-    };
-    Ok(files_src)
+
+        let file_content = match std::fs::read_to_string(&path) {
+            Ok(content) => content,
+            Err(_) => continue,
+        };
+
+        if is_keystore(&file_content) {
+            match serde_json::from_str::<serde_json::Value>(&file_content) {
+                Ok(json) => match json.get("address") {
+                    Some(address) => address.as_str().unwrap().to_string(),
+                    None => continue,
+                },
+                Err(_) => continue,
+            };
+
+            keystore_files.push(path);
+        }
+    }
+
+    Ok(keystore_files)
 }
+
+// Check if there is an 'address' or 'crypto' or 'Crypto' field in the json
+fn is_keystore(file_content: &str) -> bool {
+    serde_json::from_str::<serde_json::Value>(file_content)
+        .map(|json| json.get("address").is_some() || json.get("crypto").is_some() || json.get("Crypto").is_some())
+        .unwrap_or(false)
+}
+
